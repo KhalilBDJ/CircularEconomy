@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="JadeUPHF">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/JadeUPHF.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
