@@ -44,33 +44,6 @@ public class PartStoreAgent extends AgentWindowed {
 
         AgentServicesTools.register(this, "repair", "partstore");
 
-        // Add a behaviour to listen for CFP messages from UserAgents
-        addBehaviour(new CyclicBehaviour(this) {
-            @Override
-            public void action() {
-                MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
-                ACLMessage msg = myAgent.receive(mt);
-                if (msg != null) {
-                    // Received a CFP message
-                    String content = msg.getContent();
-                    ACLMessage reply = msg.createReply();
-
-                    Part requestedPart = findPart(content);
-                    if (requestedPart != null) {
-                        // If the part is available, send a PROPOSE response
-                        reply.setPerformative(ACLMessage.PROPOSE);
-                        reply.setContent("Part available: " + requestedPart.getName() + " at " + requestedPart.getStandardPrice() + " EUR");
-                    } else {
-                        // Otherwise, send a REFUSE response
-                        reply.setPerformative(ACLMessage.REFUSE);
-                        reply.setContent("Part not available for: " + content);
-                    }
-                    myAgent.send(reply);
-                } else {
-                    block();
-                }
-            }
-        });
     }
 
     private Part findPart(String partName) {

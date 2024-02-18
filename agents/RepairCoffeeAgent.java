@@ -23,60 +23,21 @@ public class RepairCoffeeAgent extends AgentWindowed {
 
     @Override
     public void setup() {
-        this.window = new SimpleWindow4Agent(getLocalName(), this);
+        this.window = new SimpleWindow4Agent(getLocalName(),this);
         this.window.setBackgroundTextColor(Color.orange);
-        println("Hello, do you want coffee ?");
-        Random hasard = new Random();
-
+        println("hello, do you want coffee ?");
+        var hasard = new Random();
         specialities = new ArrayList<>();
-        for (ProductType type : ProductType.values())
-            if (hasard.nextBoolean()) specialities.add(type);
-        if (specialities.isEmpty()) specialities.add(ProductType.values()[hasard.nextInt(ProductType.values().length)]);
+        for(ProductType type : ProductType.values())
+            if(hasard.nextBoolean()) specialities.add(type);
+        //we need at least one speciality
+        if(specialities.isEmpty()) specialities.add(ProductType.values()[hasard.nextInt(ProductType.values().length)]);
         println("I have these specialities : ");
-        specialities.forEach(p -> println("\t" + p));
-
-        DFAgentDescription dfd = new DFAgentDescription();
-        dfd.setName(getAID());
-        ServiceDescription sd = new ServiceDescription();
-        sd.setType("repair-coffee");
-        sd.setName("JADE-repair-coffee");
-        dfd.addServices(sd);
-        try {
-            DFService.register(this, dfd);
-        } catch (FIPAException fe) {
-            fe.printStackTrace();
-        }
-
-        addBehaviour(new CyclicBehaviour(this) {
-            @Override
-            public void action() {
-                MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
-                ACLMessage msg = myAgent.receive(mt);
-                if (msg != null) {
-                    ACLMessage reply = msg.createReply();
-
-                    if (canRepair(msg.getContent())) {
-                        reply.setPerformative(ACLMessage.PROPOSE);
-                        reply.setContent("Can repair: " + msg.getContent());
-                    } else {
-                        reply.setPerformative(ACLMessage.REFUSE);
-                        reply.setContent("Cannot repair: " + msg.getContent());
-                    }
-                    myAgent.send(reply);
-                } else {
-                    block();
-                }
-            }
-        });
+        specialities.forEach(p->println("\t"+p));
+        //registration to the yellow pages (Directory Facilitator Agent)
+        AgentServicesTools.register(this, "repair", "coffee");
+        println("I'm just registered as a repair-coffee");
     }
 
-    private boolean canRepair(String productTypeString) {
-        try {
-            ProductType productType = ProductType.valueOf(productTypeString.toUpperCase());
-            return specialities.contains(productType);
-        } catch (IllegalArgumentException e) {
-            println("Received an unknown product type: " + productTypeString);
-            return false;
-        }
-    }
+
 }
