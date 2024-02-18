@@ -88,7 +88,7 @@ public class UserAgent extends GuiAgent {
                         println("I'll bought a new product at distributors for " + selectedProduct.getPrice() + "€");
                     }
                     else println(selectedProduct.getName() +  " I don't have enough money to buy a new one ...");
-                    terminateToRepair();
+                    terminateRepair();
                 }
                 else {
                     println("I'll ask to partStore if they have " + selectedProduct.getDefault().getName());
@@ -109,6 +109,14 @@ public class UserAgent extends GuiAgent {
         for (AID coffee : coffees) {
             sendMessage(coffee,  "is_able_to_repair", ACLMessage.REQUEST);
         }
+    }
+
+    public void askAvailablePartPrice(Product requestedProduct) {
+        var partsStores = AgentServicesTools.searchAgents(this, "repair", "partstore");
+        for(AID partStore : partsStores) {
+            sendMessage(partStore, "is_part_available", ACLMessage.REQUEST);
+        }
+
     }
     private void searchRepairOptions() {
         addBehaviour(new Behaviour() {
@@ -188,6 +196,12 @@ public class UserAgent extends GuiAgent {
         message.setContent(content);
         message.addReceiver(recipient);
         send(message);
+    }
+
+    public void terminateRepair(){
+        Product productTerminated = this.productToRepair;
+        println("-".repeat(10) + " product process terminated " + "-".repeat(10));
+        println("Current wallet : " + this.wallet + " €");
     }
 
 }
