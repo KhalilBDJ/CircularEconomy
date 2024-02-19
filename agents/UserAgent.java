@@ -1,19 +1,18 @@
 package handsOn.circularEconomy.agents;
 
+import handsOn.circularEconomy.data.BreakdownLevel;
 import handsOn.circularEconomy.data.Product;
 import handsOn.circularEconomy.data.ProductType;
 import handsOn.circularEconomy.gui.UserAgentWindow;
 import jade.core.AID;
 import jade.core.AgentServicesTools;
-import jade.core.behaviours.Behaviour;
 import jade.gui.GuiAgent;
 import jade.gui.GuiEvent;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -71,10 +70,83 @@ public class UserAgent extends GuiAgent {
                 println("found this repair coffee : " + aid.getLocalName());
             println("-".repeat(30));
 
+            Product selectedProduct = window.getSelectedProduct();
+            if(!products.contains(selectedProduct)) {
+                println("This product is not in my product list");
+                return;
+            }
+            this.productToRepair = selectedProduct;
+
+
+            boolean isAbleToDetectBreakdown = isAbleToDetectBreakdown(selectedProduct);
+            if(isAbleToDetectBreakdown) {
+                println("Je suis capable de repérer le problème de -> " + selectedProduct.getDefault().getName() + ", qui est de niveau : " + selectedProduct.getBreakdownLevel());
+
+                if(selectedProduct.getBreakdownLevel() == BreakdownLevel.DEFINITIVE.getLevel()) {
+                    println(selectedProduct.getName() + " il est foutu de chez foutu");
+                    if(this.wallet >= selectedProduct.getPrice()) {
+                        this.wallet -= selectedProduct.getPrice();
+                        println("J'achèterai un nouveau produit auprès des distributeurs pour la modique somme de  " + selectedProduct.getPrice() + "€");
+                    }
+                    else println(selectedProduct.getName() +  " Je suis pauvre, je ne peux pas acheter de nouveau produit ... ;( ");
+                    terminateRepair();
+                }
+                else {
+                    println("Je vais demander au magasin s'ils ont des pièces pour " + selectedProduct.getDefault().getName());
+                    try {
+                        askPartPrice(selectedProduct);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+            }
+            else {
+                println("Je ne peux pas détecter de problème car je suis mauvais");
+                try {
+                    askToRepairCoffeesRendezVousToCheckProduct();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
 
         }
     }
 
+    private void askToRepairCoffeesRendezVousToCheckProduct() throws IOException {
+        var coffees = AgentServicesTools.searchAgents(this, "repair", "coffee");
+        for (AID coffee : coffees) {
+            ACLMessage informMessage = new ACLMessage(ACLMessage.REQUEST);
+            informMessage.addReceiver(coffee);
+            informMessage.setConversationId("puis-je avoir de l'aide ?");
+            informMessage.setContentObject(this.productToRepair);
+            send(informMessage);
+        }
+    }
+
+    private void askPartPrice(Product selectedProduct) throws IOException {
+        var partsStores = AgentServicesTools.searchAgents(this, "repair", "partstore");
+        for (AID partStore : partsStores){
+            ACLMessage informMessage = new ACLMessage(ACLMessage.REQUEST);
+            informMessage.addReceiver(partStore);
+            informMessage.setConversationId("est-ce que y'a des pieces pour cet objet ?");
+            informMessage.setContentObject(selectedProduct);
+            send(informMessage);
+        }
+    }
+
+    void terminateRepair(){
+        Product productTerminated = this.productToRepair;
+        this.products.remove(productTerminated);
+        println("-".repeat(10) + " product process terminated " + "-".repeat(10));
+        println("Argent actuel : " + this.wallet + " €");
+    }
+
+    public boolean isAbleToDetectBreakdown(Product product) {
+        if(this.skill == 0) return false;
+        else return product.getBreakdownLevel() <= this.skill;
+    }
     public void println(String s) {
         window.println(s);
     }

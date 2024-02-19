@@ -1,5 +1,6 @@
 package handsOn.circularEconomy.agents;
 
+import handsOn.circularEconomy.data.Product;
 import handsOn.circularEconomy.data.ProductType;
 import jade.core.Agent;
 import jade.core.AgentServicesTools;
@@ -12,6 +13,7 @@ import jade.gui.AgentWindowed;
 import jade.gui.SimpleWindow4Agent;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -37,6 +39,38 @@ public class RepairCoffeeAgent extends AgentWindowed {
         //registration to the yellow pages (Directory Facilitator Agent)
         AgentServicesTools.register(this, "repair", "coffee");
         println("I'm just registered as a repair-coffee");
+
+        addBehaviour(new CyclicBehaviour(this){
+            public void action(){
+                ACLMessage message = receive(MessageTemplate.MatchPerformative(ACLMessage.REQUEST));
+                if (message != null){
+                    switch (message.getConversationId()) {
+                        case "puis-je avoir de l'aide ?":
+                            try {
+                                canRepair(message);
+                            } catch (UnreadableException e) {
+                                throw new RuntimeException(e);
+                            }
+                            break;
+                        default:
+                            println(message.getConversationId());
+                    }
+                }
+                else block();
+            }
+        });
+    }
+
+    private void canRepair(ACLMessage message) throws UnreadableException {
+        Product currentProduct = (Product) message.getContentObject();
+        for(var speciality: specialities){
+            if (currentProduct.getType().equals(speciality)){
+                println("oui je peux aider");
+                return;
+            }
+        }
+        println("je n'ai pas la specialité");
+
     }
 
 
