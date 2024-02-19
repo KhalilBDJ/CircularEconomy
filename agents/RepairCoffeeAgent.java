@@ -16,6 +16,7 @@ import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -50,6 +51,8 @@ public class RepairCoffeeAgent extends AgentWindowed {
                                 canRepair(message);
                             } catch (UnreadableException e) {
                                 throw new RuntimeException(e);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
                             }
                             break;
                         default:
@@ -61,11 +64,16 @@ public class RepairCoffeeAgent extends AgentWindowed {
         });
     }
 
-    private void canRepair(ACLMessage message) throws UnreadableException {
+    private void canRepair(ACLMessage message) throws UnreadableException, IOException {
         Product currentProduct = (Product) message.getContentObject();
         for(var speciality: specialities){
             if (currentProduct.getType().equals(speciality)){
                 println("oui je peux aider");
+                ACLMessage response = new ACLMessage(ACLMessage.INFORM);
+                response.addReceiver(message.getSender());
+                response.setContent(this.getLocalName());
+                response.setConversationId("je peux aider");
+                send(response);
                 return;
             }
         }

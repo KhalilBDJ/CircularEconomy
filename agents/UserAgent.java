@@ -1,14 +1,18 @@
 package handsOn.circularEconomy.agents;
 
 import handsOn.circularEconomy.data.BreakdownLevel;
+import handsOn.circularEconomy.data.Part;
 import handsOn.circularEconomy.data.Product;
 import handsOn.circularEconomy.data.ProductType;
 import handsOn.circularEconomy.gui.UserAgentWindow;
 import jade.core.AID;
 import jade.core.AgentServicesTools;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.gui.GuiAgent;
 import jade.gui.GuiEvent;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -55,6 +59,28 @@ public class UserAgent extends GuiAgent {
         println("Here are my objects : ");
         products.forEach(p->println("\t"+p));
 
+        addBehaviour(new CyclicBehaviour(this){
+            public void action(){
+                ACLMessage message = receive(MessageTemplate.MatchPerformative(ACLMessage.INFORM));
+                if (message != null){
+                    switch (message.getConversationId()){
+                        case "je peux aider":
+                        println(message.getContent() + " est disponible");
+                        break;
+                        case "j'ai la pièce":
+                            try {
+                                Part part = (Part) message.getContentObject();
+                                println(message.getContent() + " possède la pièce et coûte + " + part.getStandardPrice());
+
+                            } catch (UnreadableException e) {
+                                throw new RuntimeException(e);
+                            }
+                    }
+                }
+
+            }
+        });
+
     }
 
     @Override
@@ -66,9 +92,9 @@ public class UserAgent extends GuiAgent {
             //search about repair coffee
             var coffees = AgentServicesTools.searchAgents(this, "repair", "coffee");
             println("-".repeat(30));
-            for(AID aid:coffees)
+           /* for(AID aid:coffees)
                 println("found this repair coffee : " + aid.getLocalName());
-            println("-".repeat(30));
+            println("-".repeat(30));*/
 
             Product selectedProduct = window.getSelectedProduct();
             if(!products.contains(selectedProduct)) {
@@ -131,7 +157,9 @@ public class UserAgent extends GuiAgent {
             ACLMessage informMessage = new ACLMessage(ACLMessage.REQUEST);
             informMessage.addReceiver(partStore);
             informMessage.setConversationId("est-ce que y'a des pieces pour cet objet ?");
-            informMessage.setContentObject(selectedProduct);
+            try {
+                informMessage.setContent(selectedProduct.getDefault().getName());
+            }catch (Exception e){}
             send(informMessage);
         }
     }

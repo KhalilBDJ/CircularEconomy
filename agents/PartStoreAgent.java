@@ -14,6 +14,7 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -59,6 +60,11 @@ public class PartStoreAgent extends AgentWindowed {
                     switch (message.getConversationId()) {
                         case "est-ce que y'a des pieces pour cet objet ?":
                             println("LAISSE MOI DORMIR ZEBI");
+                            try {
+                                checkPartAvailability(message);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
                             break;
                         default:
                             println(message.getConversationId());
@@ -67,6 +73,21 @@ public class PartStoreAgent extends AgentWindowed {
                 else block();
             }
         });
+    }
+
+    private void checkPartAvailability(ACLMessage message) throws IOException {
+        for (var part : parts) {
+            if (part.getName().equals(message.getContent())) {
+                println("je possède la pièce et elle coûte : " + part.getStandardPrice());
+                ACLMessage response = new ACLMessage(ACLMessage.INFORM);
+                response.addReceiver(message.getSender());
+                response.setContentObject(part);
+                response.setContent(this.getLocalName());
+                response.setConversationId("j'ai la pièce");
+                send(response);
+                return;
+            }
+        }
     }
 
     private Part findPart(String partName) {
