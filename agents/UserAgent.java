@@ -90,6 +90,7 @@ public class UserAgent extends GuiAgent {
                             appointments.put(message.getSender(), rdv);
                             println(rdv.toString());
                             if (check == numberOfRepairCoffeeAvailable){
+                                check = 0;
                                 try {
                                     acceptAppointment(findAIDWithMostRecentDate(appointments));
                                 } catch (IOException e) {

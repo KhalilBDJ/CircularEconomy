@@ -1,14 +1,11 @@
 package handsOn.circularEconomy.agents;
 
+import handsOn.circularEconomy.data.Part;
 import handsOn.circularEconomy.data.Product;
 import handsOn.circularEconomy.data.ProductType;
-import jade.core.Agent;
+import jade.core.AID;
 import jade.core.AgentServicesTools;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.domain.DFService;
-import jade.domain.FIPAException;
 import jade.gui.AgentWindowed;
 import jade.gui.SimpleWindow4Agent;
 import jade.lang.acl.ACLMessage;
@@ -18,16 +15,25 @@ import jade.lang.acl.UnreadableException;
 import java.awt.*;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RepairCoffeeAgent extends AgentWindowed {
     List<ProductType> specialities;
+    private AID currentClient;
+    private Map<AID, Part> partWithStore;
+    private double bestPrice;
+    private int check;
 
     @Override
     public void setup() {
         this.window = new SimpleWindow4Agent(getLocalName(),this);
+        currentClient = new AID();
+        partWithStore = new HashMap<>();
+        bestPrice = 1000000000;
+        check= 0;
         this.window.setBackgroundTextColor(Color.orange);
         println("hello, do you want coffee ?");
         var hasard = new Random();
@@ -69,6 +75,28 @@ public class RepairCoffeeAgent extends AgentWindowed {
                 else block();
             }
         });
+
+        addBehaviour(new CyclicBehaviour(this){
+            public void action(){
+                ACLMessage message = receive(MessageTemplate.MatchPerformative(ACLMessage.INFORM));
+                if (message != null){
+                    switch (message.getConversationId()){
+                        case "j'ai la piece":
+
+                            Part part = fromString(message.getContent());
+                            /*double currentPrice = part.getStandardPrice();
+                            if (currentPrice<bestPrice){
+                                bestPrice=currentPrice;
+                                partWithStore.put(message.getSender(), part);
+                            }*/
+
+                            break;
+
+                    }
+
+                }
+            }
+        });
     }
 
     private void canRepair(ACLMessage message) throws UnreadableException, IOException {
@@ -101,6 +129,7 @@ public class RepairCoffeeAgent extends AgentWindowed {
     }
 
     private void checkIfRepairable(ACLMessage message) throws UnreadableException {
+        currentClient = message.getSender();
         Product productToRepair = (Product) message.getContentObject();
         if (productToRepair.getBreakdownLevel() == 4){
             println("Monsieur je suis sincérement navré, mais votre objet est foutu...");
@@ -117,6 +146,31 @@ public class RepairCoffeeAgent extends AgentWindowed {
             }
 
         }
+    }
+
+    public static Part fromString(String partString) {
+        // Regular expression to match the part format
+        String regex = "Part\\{ ([^\\-]+\\-part\\d+) \\- ([^\\-]+) \\- ([\\d,]+)€\\}";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(partString);
+
+        if (matcher.find()) {
+            String name = matcher.group(1);
+            String typeName = matcher.group(2);
+            double price = Double.parseDouble(matcher.group(3).replace(",", "."));
+
+            // Find the corresponding ProductType
+            ProductType type = ProductType.valueOf(typeName);
+
+            // Create a new Part object with the extracted information
+            return new Part(name, type, price);
+        } else {
+            throw new IllegalArgumentException("String format is incorrect: " + partString);
+        }
+    }
+
+    private void selectBestPrice(ACLMessage message){
+        partWithStore.put(message.getSender(), fromString(message.getContent()));
     }
 
 
