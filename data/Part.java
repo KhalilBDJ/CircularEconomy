@@ -17,7 +17,7 @@ import java.util.List;
  * price of vacumcleaner-part1 is 80€ - 70€ = 10€
  * @author emmanueladam
  * */
-public class Part  {
+public class Part implements Serializable {
     /**name of the part*/
     String name;
     /**price of the part*/

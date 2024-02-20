@@ -1,5 +1,6 @@
 package handsOn.circularEconomy.agents;
 
+import handsOn.circularEconomy.ACLMessagesObject.PartAvailableMessage;
 import handsOn.circularEconomy.data.BreakdownLevel;
 import handsOn.circularEconomy.data.Part;
 import handsOn.circularEconomy.data.Product;
@@ -19,6 +20,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class UserAgent extends GuiAgent {
     private List<Product> products;
@@ -67,14 +70,10 @@ public class UserAgent extends GuiAgent {
                         case "je peux aider":
                         println(message.getContent() + " est disponible");
                         break;
-                        case "j'ai la pièce":
-                            try {
-                                Part part = (Part) message.getContentObject();
-                                println(message.getContent() + " possède la pièce et coûte + " + part.getStandardPrice());
+                        case "j'ai la piece":
+                            Part part = fromString(message.getContent());
+                            println(message.getSender().getLocalName() + " possède la pièce et coûte " + part.getStandardPrice());
 
-                            } catch (UnreadableException e) {
-                                throw new RuntimeException(e);
-                            }
                     }
                 }
 
@@ -183,4 +182,28 @@ public class UserAgent extends GuiAgent {
     public void takeDown() {
         println("Goodbye!");
     }
+
+
+    public static Part fromString(String partString) {
+        // Regular expression to match the part format
+        String regex = "Part\\{ ([^\\-]+\\-part\\d+) \\- ([^\\-]+) \\- ([\\d,]+)€\\}";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(partString);
+
+        if (matcher.find()) {
+            String name = matcher.group(1);
+            String typeName = matcher.group(2);
+            double price = Double.parseDouble(matcher.group(3).replace(",", "."));
+
+            // Find the corresponding ProductType
+            ProductType type = ProductType.valueOf(typeName);
+
+            // Create a new Part object with the extracted information
+            return new Part(name, type, price);
+        } else {
+            throw new IllegalArgumentException("String format is incorrect: " + partString);
+        }
+    }
+
+
 }

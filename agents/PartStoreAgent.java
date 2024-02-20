@@ -1,6 +1,8 @@
 package handsOn.circularEconomy.agents;
 
+import handsOn.circularEconomy.ACLMessagesObject.PartAvailableMessage;
 import handsOn.circularEconomy.data.Part;
+import handsOn.circularEconomy.data.Product;
 import jade.core.Agent;
 import jade.core.AgentServicesTools;
 import jade.core.behaviours.CyclicBehaviour;
@@ -10,8 +12,7 @@ import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.gui.AgentWindowed;
 import jade.gui.SimpleWindow4Agent;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.*;
 
 import java.awt.*;
 import java.io.IOException;
@@ -62,7 +63,7 @@ public class PartStoreAgent extends AgentWindowed {
                             println("LAISSE MOI DORMIR ZEBI");
                             try {
                                 checkPartAvailability(message);
-                            } catch (IOException e) {
+                            } catch (IOException | UnreadableException e) {
                                 throw new RuntimeException(e);
                             }
                             break;
@@ -75,15 +76,14 @@ public class PartStoreAgent extends AgentWindowed {
         });
     }
 
-    private void checkPartAvailability(ACLMessage message) throws IOException {
+    private void checkPartAvailability(ACLMessage message) throws IOException, UnreadableException {
         for (var part : parts) {
             if (part.getName().equals(message.getContent())) {
                 println("je possède la pièce et elle coûte : " + part.getStandardPrice());
                 ACLMessage response = new ACLMessage(ACLMessage.INFORM);
                 response.addReceiver(message.getSender());
-                response.setContentObject(part);
-                response.setContent(this.getLocalName());
-                response.setConversationId("j'ai la pièce");
+                response.setContent(part.toString());
+                response.setConversationId("j'ai la piece");
                 send(response);
                 return;
             }
