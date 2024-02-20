@@ -68,6 +68,7 @@ public class PartStoreAgent extends AgentWindowed {
                             break;
                         default:
                             println(message.getConversationId());
+                            break;
                     }
                 }
                 else block();

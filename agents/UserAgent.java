@@ -28,11 +28,16 @@ public class UserAgent extends GuiAgent {
     private UserAgentWindow window;
     private Product productToRepair;
     private double wallet = 0;
-    private Map<AID, Date> appointments;
+    private Map<AID, LocalDate> appointments;
+
+    private int numberOfRepairCoffeeAvailable;
+    private int check;
 
     @Override
     public void setup() {
         this.window = new UserAgentWindow(getLocalName(),this);
+        numberOfRepairCoffeeAvailable = 0;
+        check = 0;
         appointments = new HashMap<>();
         window.setButtonActivated(true);
         //add a random skill
@@ -69,18 +74,28 @@ public class UserAgent extends GuiAgent {
                 if (message != null){
                     switch (message.getConversationId()){
                         case "je peux aider":
-                        println(message.getContent() + " est disponible");
-                        println("-".repeat(30));
-                        break;
+                            println(message.getContent() + " est disponible");
+                            println("-".repeat(30));
+                            numberOfRepairCoffeeAvailable+= 1;
+                            break;
                         case "j'ai la piece":
                             Part part = fromString(message.getContent());
                             println(message.getSender().getLocalName() + " possède la pièce et coûte " + part.getStandardPrice() + "€");
                             println("-".repeat(30));
                             break;
                         case "proposition de date":
+                            check += 1;
                             println(message.getSender().getLocalName() + " propose ce rdv : ");
                             LocalDate rdv = LocalDate.parse(message.getContent());
+                            appointments.put(message.getSender(), rdv);
                             println(rdv.toString());
+                            if (check == numberOfRepairCoffeeAvailable){
+                                try {
+                                    acceptAppointment(findAIDWithMostRecentDate(appointments));
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
                             break;
                         default:
                             break;
@@ -213,6 +228,30 @@ public class UserAgent extends GuiAgent {
         } else {
             throw new IllegalArgumentException("String format is incorrect: " + partString);
         }
+    }
+
+
+    public static AID findAIDWithMostRecentDate(Map<AID, LocalDate> aidDates) {
+        if (aidDates == null || aidDates.isEmpty()) {
+            return null; // ou lever une exception selon le besoin
+        }
+
+        Map.Entry<AID, LocalDate> oldestEntry = null;
+        for (Map.Entry<AID, LocalDate> entry : aidDates.entrySet()) {
+            if (oldestEntry == null || entry.getValue().isBefore(oldestEntry.getValue())) {
+                oldestEntry = entry;
+            }
+        }
+
+        return oldestEntry.getKey();
+    }
+
+    private void acceptAppointment(AID repairCoffee) throws IOException {
+        ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
+        message.addReceiver(repairCoffee);
+        message.setConversationId("rdv accepte");
+        message.setContentObject(productToRepair);
+        send(message);
     }
 
 

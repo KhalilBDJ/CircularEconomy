@@ -56,6 +56,14 @@ public class RepairCoffeeAgent extends AgentWindowed {
                                 throw new RuntimeException(e);
                             }
                             break;
+                        case "rdv accepte":
+                            println("je vérifie ça...");
+                            try {
+                                checkIfRepairable(message);
+                            } catch (UnreadableException e) {
+                                throw new RuntimeException(e);
+                            }
+                            break;
                     }
                 }
                 else block();
@@ -90,6 +98,25 @@ public class RepairCoffeeAgent extends AgentWindowed {
 
         println("je n'ai pas la specialité");
 
+    }
+
+    private void checkIfRepairable(ACLMessage message) throws UnreadableException {
+        Product productToRepair = (Product) message.getContentObject();
+        if (productToRepair.getBreakdownLevel() == 4){
+            println("Monsieur je suis sincérement navré, mais votre objet est foutu...");
+        }
+        else {
+            println("Bonne nouvelle pour vous monsieur, vous avez la possibilité de le réparer, CEPENDANT, j'espère que vous avec le portfeuille bien fourni");
+            var partsStores = AgentServicesTools.searchAgents(this, "repair", "partstore");
+            for (var partStore : partsStores){
+                ACLMessage priceForPart = new ACLMessage(ACLMessage.REQUEST);
+                priceForPart.addReceiver(partStore);
+                priceForPart.setConversationId("est-ce que y'a des pieces pour cet objet ?");
+                priceForPart.setContent(productToRepair.getDefault().getName());
+                send(priceForPart);
+            }
+
+        }
     }
 
 
