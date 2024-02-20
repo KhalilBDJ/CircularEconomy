@@ -17,6 +17,7 @@ import jade.lang.acl.UnreadableException;
 
 import java.awt.*;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -55,8 +56,6 @@ public class RepairCoffeeAgent extends AgentWindowed {
                                 throw new RuntimeException(e);
                             }
                             break;
-                        default:
-                            println(message.getConversationId());
                     }
                 }
                 else block();
@@ -74,9 +73,21 @@ public class RepairCoffeeAgent extends AgentWindowed {
                 response.setContent(this.getLocalName());
                 response.setConversationId("je peux aider");
                 send(response);
+
+                ACLMessage proposition = new ACLMessage(ACLMessage.INFORM);
+
+                proposition.addReceiver(message.getSender());
+                Random random = new Random();
+                LocalDate date = LocalDate.now().plusDays(random.nextInt(3) + 1);
+                println("je vous propose cette date pour vérifier le produit : " + date.toString());
+                proposition.setContent(date.toString());
+                proposition.setConversationId("proposition de date");
+                send(proposition);
+
                 return;
             }
         }
+
         println("je n'ai pas la specialité");
 
     }

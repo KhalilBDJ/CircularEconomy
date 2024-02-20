@@ -17,9 +17,8 @@ import jade.lang.acl.UnreadableException;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,10 +28,12 @@ public class UserAgent extends GuiAgent {
     private UserAgentWindow window;
     private Product productToRepair;
     private double wallet = 0;
+    private Map<AID, Date> appointments;
 
     @Override
     public void setup() {
         this.window = new UserAgentWindow(getLocalName(),this);
+        appointments = new HashMap<>();
         window.setButtonActivated(true);
         //add a random skill
         Random hasard = new Random();
@@ -69,11 +70,20 @@ public class UserAgent extends GuiAgent {
                     switch (message.getConversationId()){
                         case "je peux aider":
                         println(message.getContent() + " est disponible");
+                        println("-".repeat(30));
                         break;
                         case "j'ai la piece":
                             Part part = fromString(message.getContent());
-                            println(message.getSender().getLocalName() + " possède la pièce et coûte " + part.getStandardPrice());
-
+                            println(message.getSender().getLocalName() + " possède la pièce et coûte " + part.getStandardPrice() + "€");
+                            println("-".repeat(30));
+                            break;
+                        case "proposition de date":
+                            println(message.getSender().getLocalName() + " propose ce rdv : ");
+                            LocalDate rdv = LocalDate.parse(message.getContent());
+                            println(rdv.toString());
+                            break;
+                        default:
+                            break;
                     }
                 }
 

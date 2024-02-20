@@ -60,7 +60,6 @@ public class PartStoreAgent extends AgentWindowed {
                 if (message != null){
                     switch (message.getConversationId()) {
                         case "est-ce que y'a des pieces pour cet objet ?":
-                            println("LAISSE MOI DORMIR ZEBI");
                             try {
                                 checkPartAvailability(message);
                             } catch (IOException | UnreadableException e) {
@@ -88,6 +87,7 @@ public class PartStoreAgent extends AgentWindowed {
                 return;
             }
         }
+        println("LAISSE MOI DORMIR ZEBI");
     }
 
     private Part findPart(String partName) {
