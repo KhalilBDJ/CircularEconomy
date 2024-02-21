@@ -86,19 +86,14 @@ public class RepairCoffeeAgent extends AgentWindowed {
                 if (message != null){
                     switch (message.getConversationId()){
                         case "j'ai la piece":
-
                             Part part = fromString(message.getContent());
                             check += 1;
                             partWithStore.put(message.getSender(), part);
-
                             if (check == partStoreNumber){
                                 getStoreWithBestPriceForPart(partWithStore);
                                 partWithStore = new HashMap<>();
-
                                 check = 0;
-
                             }
-
                             break;
                         case "je n'ai pas la piece":
                             check += 1;
@@ -106,7 +101,6 @@ public class RepairCoffeeAgent extends AgentWindowed {
                             if (check == partStoreNumber){
                                 getStoreWithBestPriceForPart(partWithStore);
                                 partWithStore = new HashMap<>();
-
                                 check =0;
                             }
                             if (noStoreCount == partStoreNumber){

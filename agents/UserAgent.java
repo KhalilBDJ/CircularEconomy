@@ -1,6 +1,7 @@
 package handsOn.circularEconomy.agents;
 
 import handsOn.circularEconomy.ACLMessagesObject.PartAvailableMessage;
+import handsOn.circularEconomy.ACLMessagesObject.PartWithStore;
 import handsOn.circularEconomy.data.BreakdownLevel;
 import handsOn.circularEconomy.data.Part;
 import handsOn.circularEconomy.data.Product;
@@ -30,7 +31,7 @@ public class UserAgent extends GuiAgent {
     private double wallet = 0;
     private Map<AID, LocalDate> appointments;
 
-    private Map<AID, Part> partWithStore;
+    private List<PartWithStore> partWithStore;
 
     private int numberOfRepairCoffeeAvailable;
     private int numberOfRepairCoffeeUnavailable;
@@ -48,9 +49,9 @@ public class UserAgent extends GuiAgent {
         check = 0;
         numberOfRepairCoffeeUnavailable = 0;
         appointments = new HashMap<>();
-        partWithStore = new HashMap<>();
         noStoreCount = 0;
         partStoreNumber = 4;
+        partWithStore = new ArrayList<>();
 
 
         window.setButtonActivated(true);
@@ -101,14 +102,16 @@ public class UserAgent extends GuiAgent {
                             break;
                         case "j'ai la piece":
                             Part part = fromString(message.getContent());
+                            var sender = message.getSender();
                             println(message.getSender().getLocalName() + " possède la pièce et coûte " + part.getStandardPrice() + "€");
                             println("-".repeat(30));
                             check += 1;
-                            partWithStore.put(message.getSender(), part);
+                            PartWithStore partWithStore1 = new PartWithStore(sender, part);
+                            partWithStore.add(partWithStore1);
 
                             if (check == partStoreNumber){
-                                getStoreWithBestPriceForPart(partWithStore);
-                                partWithStore = new HashMap<>();
+                                buyPart(getStoreWithBestPriceForPart(partWithStore));
+                                partWithStore = new ArrayList<>();
                                 check= 0;
                             }
                             break;
@@ -116,8 +119,8 @@ public class UserAgent extends GuiAgent {
                             check += 1;
                             noStoreCount += 1;
                             if (check == partStoreNumber){
-                                getStoreWithBestPriceForPart(partWithStore);
-                                partWithStore = new HashMap<>();
+                                buyPart(getStoreWithBestPriceForPart(partWithStore));
+                                partWithStore = new ArrayList<>();
                                 check =0;
                             }
                             if (noStoreCount == partStoreNumber){
@@ -300,35 +303,33 @@ public class UserAgent extends GuiAgent {
         send(message);
     }
 
-    private Map<AID, Part> getStoreWithBestPriceForPart(Map<AID, Part> stores) {
-        // Vérifier si la map est vide
-        if (stores == null || stores.isEmpty()) {
-            return new HashMap<>(); // ou retourner null selon le besoin de l'application
+    public PartWithStore getStoreWithBestPriceForPart(List<PartWithStore> partsWithStore) {
+        if (partsWithStore == null || partsWithStore.isEmpty()) {
+            return null; // Retourne null si la liste est vide ou non initialisée
         }
 
-        // Initialiser les variables pour trouver le meilleur prix
-        AID bestStoreAID = null;
-        Part bestPricePart = null;
-        double bestPrice = Double.MAX_VALUE;
+        PartWithStore bestPricePartWithStore = partsWithStore.get(0); // Initialiser avec le premier élément
 
-        // Parcourir la map pour trouver le meilleur prix
-        for (Map.Entry<AID, Part> entry : stores.entrySet()) {
-            Part part = entry.getValue();
-            if (part.getStandardPrice() < bestPrice) {
-                bestPrice = part.getStandardPrice();
-                bestStoreAID = entry.getKey();
-                bestPricePart = part;
+        for (PartWithStore partWithStore : partsWithStore) {
+            if (partWithStore.getPartToSell().getStandardPrice() < bestPricePartWithStore.getPartToSell().getStandardPrice()) {
+                bestPricePartWithStore = partWithStore; // Mettre à jour si un prix inférieur est trouvé
             }
         }
 
-        // Créer et retourner le résultat
-        Map<AID, Part> result = new HashMap<>();
-        if (bestStoreAID != null) { // S'assurer qu'une Part a été trouvée
-            result.put(bestStoreAID, bestPricePart);
-        }
+        println("le meilleur store est : " + bestPricePartWithStore.getPartStore().getLocalName() + " et propose la pièce suivante : " + bestPricePartWithStore.getPartToSell().toString());
 
-        println("le meilleur magasin est : " + bestStoreAID.getLocalName() + " et propose cette pièce : " + bestPricePart.toString());
-        return result;
+        return bestPricePartWithStore;
+    }
+
+    private void buyPart(PartWithStore partWithStore){
+        ACLMessage buyRequest = new ACLMessage(ACLMessage.REQUEST);
+        buyRequest.setContent(productToRepair.getDefault().toString());
+        buyRequest.setConversationId("j'achete la piece");
+        buyRequest.addReceiver(partWithStore.getPartStore());
+        products.remove(productToRepair);
+        wallet -= partWithStore.getPartToSell().getStandardPrice();
+        println("j'achète la pièce, il me reste tant : " + wallet);
+        send(buyRequest);
     }
 
 
