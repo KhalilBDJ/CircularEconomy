@@ -30,9 +30,16 @@ public class UserAgent extends GuiAgent {
     private double wallet = 0;
     private Map<AID, LocalDate> appointments;
 
+    private Map<AID, Part> partWithStore;
+
     private int numberOfRepairCoffeeAvailable;
     private int numberOfRepairCoffeeUnavailable;
     private int check;
+    private int noStoreCount;
+
+    private int partStoreNumber;
+
+
 
     @Override
     public void setup() {
@@ -41,6 +48,11 @@ public class UserAgent extends GuiAgent {
         check = 0;
         numberOfRepairCoffeeUnavailable = 0;
         appointments = new HashMap<>();
+        partWithStore = new HashMap<>();
+        noStoreCount = 0;
+        partStoreNumber = 4;
+
+
         window.setButtonActivated(true);
         //add a random skill
         Random hasard = new Random();
@@ -86,10 +98,33 @@ public class UserAgent extends GuiAgent {
                                 println("aucun café n'a la spécialité");
                                 numberOfRepairCoffeeUnavailable = 0;
                             }
+                            break;
                         case "j'ai la piece":
                             Part part = fromString(message.getContent());
                             println(message.getSender().getLocalName() + " possède la pièce et coûte " + part.getStandardPrice() + "€");
                             println("-".repeat(30));
+                            check += 1;
+                            partWithStore.put(message.getSender(), part);
+
+                            if (check == partStoreNumber){
+                                getStoreWithBestPriceForPart(partWithStore);
+                                partWithStore = new HashMap<>();
+                                check= 0;
+                            }
+                            break;
+                        case "je n'ai pas la piece":
+                            check += 1;
+                            noStoreCount += 1;
+                            if (check == partStoreNumber){
+                                getStoreWithBestPriceForPart(partWithStore);
+                                partWithStore = new HashMap<>();
+                                check =0;
+                            }
+                            if (noStoreCount == partStoreNumber){
+                                println("aucun magasin n'a la pièce");
+                                noStoreCount = 0;
+                                check = 0;
+                            }
                             break;
                         case "proposition de date":
                             check += 1;
@@ -102,6 +137,7 @@ public class UserAgent extends GuiAgent {
                                 numberOfRepairCoffeeAvailable = 0;
                                 try {
                                     acceptAppointment(findAIDWithMostRecentDate(appointments));
+                                    appointments = new HashMap<>();
                                 } catch (IOException e) {
                                     throw new RuntimeException(e);
                                 }
@@ -262,6 +298,37 @@ public class UserAgent extends GuiAgent {
         message.setConversationId("rdv accepte");
         message.setContentObject(productToRepair);
         send(message);
+    }
+
+    private Map<AID, Part> getStoreWithBestPriceForPart(Map<AID, Part> stores) {
+        // Vérifier si la map est vide
+        if (stores == null || stores.isEmpty()) {
+            return new HashMap<>(); // ou retourner null selon le besoin de l'application
+        }
+
+        // Initialiser les variables pour trouver le meilleur prix
+        AID bestStoreAID = null;
+        Part bestPricePart = null;
+        double bestPrice = Double.MAX_VALUE;
+
+        // Parcourir la map pour trouver le meilleur prix
+        for (Map.Entry<AID, Part> entry : stores.entrySet()) {
+            Part part = entry.getValue();
+            if (part.getStandardPrice() < bestPrice) {
+                bestPrice = part.getStandardPrice();
+                bestStoreAID = entry.getKey();
+                bestPricePart = part;
+            }
+        }
+
+        // Créer et retourner le résultat
+        Map<AID, Part> result = new HashMap<>();
+        if (bestStoreAID != null) { // S'assurer qu'une Part a été trouvée
+            result.put(bestStoreAID, bestPricePart);
+        }
+
+        println("le meilleur magasin est : " + bestStoreAID.getLocalName() + " et propose cette pièce : " + bestPricePart.toString());
+        return result;
     }
 
 

@@ -93,6 +93,9 @@ public class RepairCoffeeAgent extends AgentWindowed {
 
                             if (check == partStoreNumber){
                                 getStoreWithBestPriceForPart(partWithStore);
+                                partWithStore = new HashMap<>();
+
+                                check = 0;
 
                             }
 
@@ -102,10 +105,14 @@ public class RepairCoffeeAgent extends AgentWindowed {
                             noStoreCount += 1;
                             if (check == partStoreNumber){
                                 getStoreWithBestPriceForPart(partWithStore);
+                                partWithStore = new HashMap<>();
+
+                                check =0;
                             }
                             if (noStoreCount == partStoreNumber){
                                 println("aucun magasin n'a la pièce");
                                 noStoreCount = 0;
+                                check = 0;
                             }
                             break;
                     }
@@ -191,9 +198,6 @@ public class RepairCoffeeAgent extends AgentWindowed {
         }
     }
 
-    private void selectBestPrice(ACLMessage message){
-        partWithStore.put(message.getSender(), fromString(message.getContent()));
-    }
 
     private Map<AID, Part> getStoreWithBestPriceForPart(Map<AID, Part> stores) {
         // Vérifier si la map est vide
