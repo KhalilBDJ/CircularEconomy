@@ -71,6 +71,7 @@ public class RepairCoffeeAgent extends AgentWindowed {
                             println("je vérifie ça...");
                             try {
                                 checkIfRepairable(message);
+                                currentClient = message.getSender();
                             } catch (UnreadableException e) {
                                 throw new RuntimeException(e);
                             }
@@ -211,8 +212,14 @@ public class RepairCoffeeAgent extends AgentWindowed {
         }
 
         println("le meilleur store est : " + bestPricePartWithStore.getPartStore().getLocalName() + " et propose la pièce suivante : " + bestPricePartWithStore.getPartToSell().toString());
-
         return bestPricePartWithStore;
+    }
+
+    private void sendCustomerToStore(PartWithStore partWithStore){
+        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+        message.addReceiver(currentClient);
+        message.setConversationId("allez vers ce magasin");
+
     }
 
 
