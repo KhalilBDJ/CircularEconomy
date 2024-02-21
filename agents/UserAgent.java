@@ -251,6 +251,7 @@ public class UserAgent extends GuiAgent {
         this.products.remove(productTerminated);
         println("-".repeat(10) + " product process terminated " + "-".repeat(10));
         println("Argent actuel : " + this.wallet + " €");
+        window.refreshProductList(products);
     }
 
     public boolean isAbleToDetectBreakdown(Product product) {

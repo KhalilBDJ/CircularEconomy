@@ -164,4 +164,10 @@ public class UserAgentWindow extends JFrame implements ActionListener {
         for (Product p : list) comboProducts.addItem(p);
     }
 
+    public void refreshProductList(List<Product> updatedProducts) {
+        // Mettez à jour le composant de liste ou de combo box ici
+        // Cela pourrait ressembler à quelque chose comme ça, en fonction de votre implémentation spécifique
+        comboProducts.setModel(new DefaultComboBoxModel<>(updatedProducts.toArray(new Product[0])));
+    }
+
 }

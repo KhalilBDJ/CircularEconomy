@@ -9,7 +9,7 @@ public class PartWithStore {
     private Part partToSell;
     private AID partStore;
 
-    public PartWithStore(AID PartStore, Part partToSell) {
+    public PartWithStore(AID partStore, Part partToSell) {
         this.partToSell = partToSell;
         this.partStore = partStore;
     }

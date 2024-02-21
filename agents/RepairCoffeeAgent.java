@@ -1,5 +1,6 @@
 package handsOn.circularEconomy.agents;
 
+import handsOn.circularEconomy.ACLMessagesObject.PartWithStore;
 import handsOn.circularEconomy.data.Part;
 import handsOn.circularEconomy.data.Product;
 import handsOn.circularEconomy.data.ProductType;
@@ -23,7 +24,7 @@ import java.util.regex.Pattern;
 public class RepairCoffeeAgent extends AgentWindowed {
     List<ProductType> specialities;
     private AID currentClient;
-    private Map<AID, Part> partWithStore;
+    private List<PartWithStore> partWithStore;
     private double bestPrice;
     private int partStoreNumber;
     private int check;
@@ -33,7 +34,7 @@ public class RepairCoffeeAgent extends AgentWindowed {
     public void setup() {
         this.window = new SimpleWindow4Agent(getLocalName(),this);
         currentClient = new AID();
-        partWithStore = new HashMap<>();
+        partWithStore = new ArrayList<>();
         bestPrice = 1000000000;
         partStoreNumber = 4;
         check = 0;
@@ -88,10 +89,10 @@ public class RepairCoffeeAgent extends AgentWindowed {
                         case "j'ai la piece":
                             Part part = fromString(message.getContent());
                             check += 1;
-                            partWithStore.put(message.getSender(), part);
+                            partWithStore.add(new PartWithStore(message.getSender(), part));
                             if (check == partStoreNumber){
                                 getStoreWithBestPriceForPart(partWithStore);
-                                partWithStore = new HashMap<>();
+                                partWithStore = new ArrayList<>();
                                 check = 0;
                                 noStoreCount = 0;
 
@@ -102,7 +103,7 @@ public class RepairCoffeeAgent extends AgentWindowed {
                             noStoreCount += 1;
                             if (check == partStoreNumber){
                                 getStoreWithBestPriceForPart(partWithStore);
-                                partWithStore = new HashMap<>();
+                                partWithStore = new ArrayList<>();
                                 noStoreCount = 0;
                                 check =0;
                             }
@@ -196,35 +197,22 @@ public class RepairCoffeeAgent extends AgentWindowed {
     }
 
 
-    private Map<AID, Part> getStoreWithBestPriceForPart(Map<AID, Part> stores) {
-        // Vérifier si la map est vide
-        if (stores == null || stores.isEmpty()) {
-            return new HashMap<>(); // ou retourner null selon le besoin de l'application
+    public PartWithStore getStoreWithBestPriceForPart(List<PartWithStore> partsWithStore) {
+        if (partsWithStore == null || partsWithStore.isEmpty()) {
+            return null; // Retourne null si la liste est vide ou non initialisée
         }
 
-        // Initialiser les variables pour trouver le meilleur prix
-        AID bestStoreAID = null;
-        Part bestPricePart = null;
-        double bestPrice = Double.MAX_VALUE;
+        PartWithStore bestPricePartWithStore = partsWithStore.get(0); // Initialiser avec le premier élément
 
-        // Parcourir la map pour trouver le meilleur prix
-        for (Map.Entry<AID, Part> entry : stores.entrySet()) {
-            Part part = entry.getValue();
-            if (part.getStandardPrice() < bestPrice) {
-                bestPrice = part.getStandardPrice();
-                bestStoreAID = entry.getKey();
-                bestPricePart = part;
+        for (PartWithStore partWithStore : partsWithStore) {
+            if (partWithStore.getPartToSell().getStandardPrice() < bestPricePartWithStore.getPartToSell().getStandardPrice()) {
+                bestPricePartWithStore = partWithStore; // Mettre à jour si un prix inférieur est trouvé
             }
         }
 
-        // Créer et retourner le résultat
-        Map<AID, Part> result = new HashMap<>();
-        if (bestStoreAID != null) { // S'assurer qu'une Part a été trouvée
-            result.put(bestStoreAID, bestPricePart);
-        }
+        println("le meilleur store est : " + bestPricePartWithStore.getPartStore().getLocalName() + " et propose la pièce suivante : " + bestPricePartWithStore.getPartToSell().toString());
 
-        println("le meilleur magasin est : " + bestStoreAID.getLocalName() + " et propose cette pièce : " + bestPricePart.toString());
-        return result;
+        return bestPricePartWithStore;
     }
 
 
