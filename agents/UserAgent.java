@@ -38,6 +38,7 @@ public class UserAgent extends GuiAgent {
     private int check;
     private int noStoreCount;
 
+    private int coffeeCount;
     private int partStoreNumber;
 
 
@@ -52,6 +53,8 @@ public class UserAgent extends GuiAgent {
         noStoreCount = 0;
         partStoreNumber = 4;
         partWithStore = new ArrayList<>();
+        coffeeCount = AgentServicesTools.searchAgents(this, "repair", "coffee").length;
+
 
 
         window.setButtonActivated(true);
@@ -95,7 +98,7 @@ public class UserAgent extends GuiAgent {
                             break;
                         case "je ne peux pas aider":
                             numberOfRepairCoffeeUnavailable += 1;
-                            if (numberOfRepairCoffeeUnavailable == 4){
+                            if (numberOfRepairCoffeeUnavailable == coffeeCount){
                                 println("aucun café n'a la spécialité");
                                 numberOfRepairCoffeeUnavailable = 0;
                             }
@@ -113,6 +116,8 @@ public class UserAgent extends GuiAgent {
                                 buyPart(getStoreWithBestPriceForPart(partWithStore));
                                 partWithStore = new ArrayList<>();
                                 check= 0;
+                                noStoreCount = 0;
+
                             }
                             break;
                         case "je n'ai pas la piece":
@@ -122,6 +127,8 @@ public class UserAgent extends GuiAgent {
                                 buyPart(getStoreWithBestPriceForPart(partWithStore));
                                 partWithStore = new ArrayList<>();
                                 check =0;
+                                noStoreCount = 0;
+
                             }
                             if (noStoreCount == partStoreNumber){
                                 println("aucun magasin n'a la pièce");
@@ -136,11 +143,13 @@ public class UserAgent extends GuiAgent {
                             appointments.put(message.getSender(), rdv);
                             println(rdv.toString());
                             if (check == numberOfRepairCoffeeAvailable){
-                                check = 0;
-                                numberOfRepairCoffeeAvailable = 0;
                                 try {
                                     acceptAppointment(findAIDWithMostRecentDate(appointments));
                                     appointments = new HashMap<>();
+                                    check = 0;
+                                    numberOfRepairCoffeeAvailable = 0;
+                                    numberOfRepairCoffeeUnavailable = 0;
+
                                 } catch (IOException e) {
                                     throw new RuntimeException(e);
                                 }
@@ -280,7 +289,7 @@ public class UserAgent extends GuiAgent {
     }
 
 
-    public static AID findAIDWithMostRecentDate(Map<AID, LocalDate> aidDates) {
+    public AID findAIDWithMostRecentDate(Map<AID, LocalDate> aidDates) {
         if (aidDates == null || aidDates.isEmpty()) {
             return null; // ou lever une exception selon le besoin
         }

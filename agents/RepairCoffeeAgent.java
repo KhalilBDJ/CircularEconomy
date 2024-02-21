@@ -93,6 +93,8 @@ public class RepairCoffeeAgent extends AgentWindowed {
                                 getStoreWithBestPriceForPart(partWithStore);
                                 partWithStore = new HashMap<>();
                                 check = 0;
+                                noStoreCount = 0;
+
                             }
                             break;
                         case "je n'ai pas la piece":
@@ -101,6 +103,7 @@ public class RepairCoffeeAgent extends AgentWindowed {
                             if (check == partStoreNumber){
                                 getStoreWithBestPriceForPart(partWithStore);
                                 partWithStore = new HashMap<>();
+                                noStoreCount = 0;
                                 check =0;
                             }
                             if (noStoreCount == partStoreNumber){
