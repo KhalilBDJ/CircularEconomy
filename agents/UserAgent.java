@@ -31,6 +31,7 @@ public class UserAgent extends GuiAgent {
     private Map<AID, LocalDate> appointments;
 
     private int numberOfRepairCoffeeAvailable;
+    private int numberOfRepairCoffeeUnavailable;
     private int check;
 
     @Override
@@ -38,6 +39,7 @@ public class UserAgent extends GuiAgent {
         this.window = new UserAgentWindow(getLocalName(),this);
         numberOfRepairCoffeeAvailable = 0;
         check = 0;
+        numberOfRepairCoffeeUnavailable = 0;
         appointments = new HashMap<>();
         window.setButtonActivated(true);
         //add a random skill
@@ -78,6 +80,12 @@ public class UserAgent extends GuiAgent {
                             println("-".repeat(30));
                             numberOfRepairCoffeeAvailable+= 1;
                             break;
+                        case "je ne peux pas aider":
+                            numberOfRepairCoffeeUnavailable += 1;
+                            if (numberOfRepairCoffeeUnavailable == 4){
+                                println("aucun café n'a la spécialité");
+                                numberOfRepairCoffeeUnavailable = 0;
+                            }
                         case "j'ai la piece":
                             Part part = fromString(message.getContent());
                             println(message.getSender().getLocalName() + " possède la pièce et coûte " + part.getStandardPrice() + "€");
@@ -91,6 +99,7 @@ public class UserAgent extends GuiAgent {
                             println(rdv.toString());
                             if (check == numberOfRepairCoffeeAvailable){
                                 check = 0;
+                                numberOfRepairCoffeeAvailable = 0;
                                 try {
                                     acceptAppointment(findAIDWithMostRecentDate(appointments));
                                 } catch (IOException e) {

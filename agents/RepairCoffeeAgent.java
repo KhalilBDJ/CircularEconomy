@@ -25,7 +25,9 @@ public class RepairCoffeeAgent extends AgentWindowed {
     private AID currentClient;
     private Map<AID, Part> partWithStore;
     private double bestPrice;
+    private int partStoreNumber;
     private int check;
+    private int noStoreCount;
 
     @Override
     public void setup() {
@@ -33,7 +35,9 @@ public class RepairCoffeeAgent extends AgentWindowed {
         currentClient = new AID();
         partWithStore = new HashMap<>();
         bestPrice = 1000000000;
-        check= 0;
+        partStoreNumber = 4;
+        check = 0;
+        noStoreCount = 0;
         this.window.setBackgroundTextColor(Color.orange);
         println("hello, do you want coffee ?");
         var hasard = new Random();
@@ -84,14 +88,26 @@ public class RepairCoffeeAgent extends AgentWindowed {
                         case "j'ai la piece":
 
                             Part part = fromString(message.getContent());
-                            /*double currentPrice = part.getStandardPrice();
-                            if (currentPrice<bestPrice){
-                                bestPrice=currentPrice;
-                                partWithStore.put(message.getSender(), part);
-                            }*/
+                            check += 1;
+                            partWithStore.put(message.getSender(), part);
+
+                            if (check == partStoreNumber){
+                                getStoreWithBestPriceForPart(partWithStore);
+
+                            }
 
                             break;
-
+                        case "je n'ai pas la piece":
+                            check += 1;
+                            noStoreCount += 1;
+                            if (check == partStoreNumber){
+                                getStoreWithBestPriceForPart(partWithStore);
+                            }
+                            if (noStoreCount == partStoreNumber){
+                                println("aucun magasin n'a la pièce");
+                                noStoreCount = 0;
+                            }
+                            break;
                     }
 
                 }
@@ -123,6 +139,12 @@ public class RepairCoffeeAgent extends AgentWindowed {
                 return;
             }
         }
+        ACLMessage response = new ACLMessage(ACLMessage.INFORM);
+        response.addReceiver(message.getSender());
+        response.setContent(this.getLocalName());
+        response.setConversationId("je ne peux pas aider");
+        send(response);
+
 
         println("je n'ai pas la specialité");
 
@@ -171,6 +193,37 @@ public class RepairCoffeeAgent extends AgentWindowed {
 
     private void selectBestPrice(ACLMessage message){
         partWithStore.put(message.getSender(), fromString(message.getContent()));
+    }
+
+    private Map<AID, Part> getStoreWithBestPriceForPart(Map<AID, Part> stores) {
+        // Vérifier si la map est vide
+        if (stores == null || stores.isEmpty()) {
+            return new HashMap<>(); // ou retourner null selon le besoin de l'application
+        }
+
+        // Initialiser les variables pour trouver le meilleur prix
+        AID bestStoreAID = null;
+        Part bestPricePart = null;
+        double bestPrice = Double.MAX_VALUE;
+
+        // Parcourir la map pour trouver le meilleur prix
+        for (Map.Entry<AID, Part> entry : stores.entrySet()) {
+            Part part = entry.getValue();
+            if (part.getStandardPrice() < bestPrice) {
+                bestPrice = part.getStandardPrice();
+                bestStoreAID = entry.getKey();
+                bestPricePart = part;
+            }
+        }
+
+        // Créer et retourner le résultat
+        Map<AID, Part> result = new HashMap<>();
+        if (bestStoreAID != null) { // S'assurer qu'une Part a été trouvée
+            result.put(bestStoreAID, bestPricePart);
+        }
+
+        println("le meilleur magasin est : " + bestStoreAID.getLocalName() + " et propose cette pièce : " + bestPricePart.toString());
+        return result;
     }
 
 

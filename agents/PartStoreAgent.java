@@ -88,7 +88,11 @@ public class PartStoreAgent extends AgentWindowed {
                 return;
             }
         }
-        println("LAISSE MOI DORMIR ZEBI");
+        ACLMessage response = new ACLMessage(ACLMessage.INFORM);
+        response.addReceiver(message.getSender());
+        response.setConversationId("je n'ai pas la piece");
+        println("je n'ai pas la pièce");
+        send(response);
     }
 
     private Part findPart(String partName) {
