@@ -117,23 +117,26 @@ public class UserAgent extends GuiAgent {
                                 partWithStore = new ArrayList<>();
                                 check= 0;
                                 noStoreCount = 0;
+                                terminateRepair();
 
                             }
                             break;
                         case "je n'ai pas la piece":
                             check += 1;
                             noStoreCount += 1;
-                            if (check == partStoreNumber){
+                            if (check == partStoreNumber && !partWithStore.isEmpty()){
                                 buyPart(getStoreWithBestPriceForPart(partWithStore));
                                 partWithStore = new ArrayList<>();
                                 check =0;
                                 noStoreCount = 0;
+                                terminateRepair();
 
                             }
                             if (noStoreCount == partStoreNumber){
                                 println("aucun magasin n'a la pièce");
                                 noStoreCount = 0;
                                 check = 0;
+                                noMoreChoice();
                             }
                             break;
                         case "proposition de date":
@@ -155,8 +158,21 @@ public class UserAgent extends GuiAgent {
                                 }
                             }
                             break;
-                        default:
+                        case "j'achete la piece":
+                            println("j'achète");
+                            Part partToBuy = fromString(message.getContent());
+                            withdrawMoney(partToBuy.getStandardPrice());
+                            givePart(message);
                             break;
+                        default:
+                        case "objet repare":
+                            println("merci");
+                            terminateRepair();
+                            break;
+                        case "objet foutu", "aucun store disponible":
+                           noMoreChoice();
+                           break;
+
                     }
                 }
 
@@ -341,6 +357,44 @@ public class UserAgent extends GuiAgent {
         println("j'achète la pièce, il me reste tant : " + wallet);
         send(buyRequest);
     }
+
+    // Méthode pour retirer de l'argent du portefeuille de l'utilisateur
+    public void withdrawMoney(double amount) {
+        if (amount > 0 && this.wallet >= amount) {
+            this.wallet -= amount;
+            println("Montant de " + amount + "€ retiré du portefeuille. Nouveau solde : " + this.wallet + "€");
+        } else {
+            println("Opération de retrait échouée. Vérifiez que le montant est positif et que le solde est suffisant.");
+        }
+    }
+
+    // Méthode pour retirer un produit de la liste des produits de l'utilisateur
+    public void removeProduct(Product productToRemove) {
+        if (products.contains(productToRemove)) {
+            products.remove(productToRemove);
+            println("Produit retiré : " + productToRemove.getName());
+        } else {
+            println("Produit non trouvé dans la liste et ne peut être retiré.");
+        }
+    }
+
+    public void givePart(ACLMessage message){
+        ACLMessage repairRequest = new ACLMessage(ACLMessage.REQUEST);
+        println("je veux bien que voue le réparez");
+        repairRequest.setConversationId("reparez");
+        repairRequest.addReceiver(message.getSender());
+        send(repairRequest);
+    }
+
+    private void noMoreChoice(){
+        if(wallet >= productToRepair.getPrice()) {
+            wallet -= productToRepair.getPrice();
+            println("Dommage, J'achèterai un nouveau produit auprès des distributeurs pour la modique somme de  " + productToRepair.getPrice() + "€");
+        }
+        else println("Dommage, je suis pauvre, je ne peux pas acheter de nouveau produit ... ;( ");
+        terminateRepair();
+    }
+
 
 
 }

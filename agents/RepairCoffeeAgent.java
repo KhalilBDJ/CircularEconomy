@@ -92,7 +92,11 @@ public class RepairCoffeeAgent extends AgentWindowed {
                             check += 1;
                             partWithStore.add(new PartWithStore(message.getSender(), part));
                             if (check == partStoreNumber){
-                                getStoreWithBestPriceForPart(partWithStore);
+                                try {
+                                    getStoreWithBestPriceForPart(partWithStore);
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
                                 partWithStore = new ArrayList<>();
                                 check = 0;
                                 noStoreCount = 0;
@@ -103,7 +107,11 @@ public class RepairCoffeeAgent extends AgentWindowed {
                             check += 1;
                             noStoreCount += 1;
                             if (check == partStoreNumber){
-                                getStoreWithBestPriceForPart(partWithStore);
+                                try {
+                                    getStoreWithBestPriceForPart(partWithStore);
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
                                 partWithStore = new ArrayList<>();
                                 noStoreCount = 0;
                                 check =0;
@@ -112,7 +120,12 @@ public class RepairCoffeeAgent extends AgentWindowed {
                                 println("aucun magasin n'a la pièce");
                                 noStoreCount = 0;
                                 check = 0;
+
                             }
+                            break;
+                        case "reparez":
+                            println("je répare");
+                            sendProductBack(message);
                             break;
                     }
 
@@ -161,6 +174,10 @@ public class RepairCoffeeAgent extends AgentWindowed {
         Product productToRepair = (Product) message.getContentObject();
         if (productToRepair.getBreakdownLevel() == 4){
             println("Monsieur je suis sincérement navré, mais votre objet est foutu...");
+            ACLMessage downProductInform = new ACLMessage(ACLMessage.INFORM);
+            downProductInform.addReceiver(message.getSender());
+            downProductInform.setConversationId("objet foutu");
+            send(downProductInform);
         }
         else {
             println("Bonne nouvelle pour vous monsieur, vous avez la possibilité de le réparer, CEPENDANT, j'espère que vous avec le portfeuille bien fourni");
@@ -177,7 +194,6 @@ public class RepairCoffeeAgent extends AgentWindowed {
     }
 
     public static Part fromString(String partString) {
-        // Regular expression to match the part format
         String regex = "Part\\{ ([^\\-]+\\-part\\d+) \\- ([^\\-]+) \\- ([\\d,]+)€\\}";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(partString);
@@ -187,10 +203,7 @@ public class RepairCoffeeAgent extends AgentWindowed {
             String typeName = matcher.group(2);
             double price = Double.parseDouble(matcher.group(3).replace(",", "."));
 
-            // Find the corresponding ProductType
             ProductType type = ProductType.valueOf(typeName);
-
-            // Create a new Part object with the extracted information
             return new Part(name, type, price);
         } else {
             throw new IllegalArgumentException("String format is incorrect: " + partString);
@@ -198,28 +211,48 @@ public class RepairCoffeeAgent extends AgentWindowed {
     }
 
 
-    public PartWithStore getStoreWithBestPriceForPart(List<PartWithStore> partsWithStore) {
+    public PartWithStore getStoreWithBestPriceForPart(List<PartWithStore> partsWithStore) throws IOException {
         if (partsWithStore == null || partsWithStore.isEmpty()) {
-            return null; // Retourne null si la liste est vide ou non initialisée
+            return null;
         }
 
-        PartWithStore bestPricePartWithStore = partsWithStore.get(0); // Initialiser avec le premier élément
+        PartWithStore bestPricePartWithStore = partsWithStore.get(0);
 
         for (PartWithStore partWithStore : partsWithStore) {
             if (partWithStore.getPartToSell().getStandardPrice() < bestPricePartWithStore.getPartToSell().getStandardPrice()) {
-                bestPricePartWithStore = partWithStore; // Mettre à jour si un prix inférieur est trouvé
+                bestPricePartWithStore = partWithStore;
             }
         }
 
         println("le meilleur store est : " + bestPricePartWithStore.getPartStore().getLocalName() + " et propose la pièce suivante : " + bestPricePartWithStore.getPartToSell().toString());
+        buyPartForCustomer(bestPricePartWithStore);
         return bestPricePartWithStore;
     }
 
-    private void sendCustomerToStore(PartWithStore partWithStore){
-        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
-        message.addReceiver(currentClient);
-        message.setConversationId("allez vers ce magasin");
+    private void buyPartForCustomer(PartWithStore partWithStore){
+        println("vous pouvez l'acheter");
+        ACLMessage buyRequest = new ACLMessage(ACLMessage.INFORM);
+        buyRequest.setContent(partWithStore.getPartToSell().toString());
+        buyRequest.setConversationId("j'achete la piece");
+        buyRequest.addReceiver(currentClient);
+        send(buyRequest);
 
+    }
+
+    public void sendProductBack(ACLMessage message){
+        ACLMessage productRepaired = new ACLMessage(ACLMessage.INFORM);
+        productRepaired.addReceiver(message.getSender());
+        productRepaired.setConversationId("objet repare");
+        println("l'objet est réparé, merci pour votre confiance");
+        send(productRepaired);
+    }
+
+    public void noStoreAvailabble(ACLMessage message){
+        ACLMessage noStoreInform = new ACLMessage(ACLMessage.INFORM);
+        noStoreInform.addReceiver(currentClient);
+        noStoreInform.setConversationId("aucun store disponible");
+        println("je suis navré mais aucun magasin ne possède la pièce");
+        send(noStoreInform);
     }
 
 

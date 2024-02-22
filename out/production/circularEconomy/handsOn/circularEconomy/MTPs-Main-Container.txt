@@ -1,1 +1,1 @@
-http://host.docker.internal:7778/acc
+http://LOJ-CND1515F0W:7778/acc
